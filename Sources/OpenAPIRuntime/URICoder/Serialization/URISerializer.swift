@@ -117,10 +117,12 @@ extension URISerializer {
             switch configuration.style {
             case .form: keyAndValueSeparator = "="
             case .simple: keyAndValueSeparator = nil
-            case .deepObject: keyAndValueSeparator = "="
+            case .deepObject: return // deepObject doesn't handle primitives
             }
             try serializePrimitiveKeyValuePair(primitive, forKey: key, separator: keyAndValueSeparator)
-        case .array(let array): try serializeArray(array.map(unwrapPrimitiveValue), forKey: key)
+        case .array(let array):
+            guard configuration.style != .deepObject else { return } // deepObject doesn't handle arrays
+            try serializeArray(array.map(unwrapPrimitiveValue), forKey: key)
         case .dictionary(let dictionary):
             try serializeDictionary(dictionary.mapValues(unwrapPrimitiveValue), forKey: key)
         }
