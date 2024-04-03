@@ -97,7 +97,7 @@ final class Test_URICodingRoundtrip: Test_Runtime {
                 simpleUnexplode: "",
                 formDataExplode: "root=",
                 formDataUnexplode: "root=",
-                deepObjectExplode: "root="
+                deepObjectExplode: ""
             )
         )
 
@@ -112,7 +112,7 @@ final class Test_URICodingRoundtrip: Test_Runtime {
                 simpleUnexplode: "Hello%20World%21",
                 formDataExplode: "root=Hello+World%21",
                 formDataUnexplode: "root=Hello+World%21",
-                deepObjectExplode: "root=Hello+World%21"
+                deepObjectExplode: ""
             )
         )
 
@@ -127,7 +127,7 @@ final class Test_URICodingRoundtrip: Test_Runtime {
                 simpleUnexplode: "red",
                 formDataExplode: "root=red",
                 formDataUnexplode: "root=red",
-                deepObjectExplode: "root=red"
+                deepObjectExplode: ""
             )
         )
 
@@ -142,7 +142,7 @@ final class Test_URICodingRoundtrip: Test_Runtime {
                 simpleUnexplode: "1234",
                 formDataExplode: "root=1234",
                 formDataUnexplode: "root=1234",
-                deepObjectExplode: "root=1234"
+                deepObjectExplode: ""
             )
         )
 
@@ -157,7 +157,7 @@ final class Test_URICodingRoundtrip: Test_Runtime {
                 simpleUnexplode: "12.34",
                 formDataExplode: "root=12.34",
                 formDataUnexplode: "root=12.34",
-                deepObjectExplode: "root=12.34"
+                deepObjectExplode: ""
             )
         )
 
@@ -172,7 +172,7 @@ final class Test_URICodingRoundtrip: Test_Runtime {
                 simpleUnexplode: "true",
                 formDataExplode: "root=true",
                 formDataUnexplode: "root=true",
-                deepObjectExplode: "root=true"
+                deepObjectExplode: ""
             )
         )
 
@@ -187,7 +187,7 @@ final class Test_URICodingRoundtrip: Test_Runtime {
                 simpleUnexplode: "2023-08-25T07%3A34%3A59Z",
                 formDataExplode: "root=2023-08-25T07%3A34%3A59Z",
                 formDataUnexplode: "root=2023-08-25T07%3A34%3A59Z",
-                deepObjectExplode: "root=2023-08-25T07%3A34%3A59Z"
+                deepObjectExplode: ""
             )
         )
 
@@ -202,7 +202,7 @@ final class Test_URICodingRoundtrip: Test_Runtime {
                 simpleUnexplode: "a,b,c",
                 formDataExplode: "list=a&list=b&list=c",
                 formDataUnexplode: "list=a,b,c",
-                deepObjectExplode: "list=a&list=b&list=c"
+                deepObjectExplode: ""
             )
         )
 
@@ -217,7 +217,7 @@ final class Test_URICodingRoundtrip: Test_Runtime {
                 simpleUnexplode: "2023-08-25T07%3A34%3A59Z,2023-08-25T07%3A35%3A01Z",
                 formDataExplode: "list=2023-08-25T07%3A34%3A59Z&list=2023-08-25T07%3A35%3A01Z",
                 formDataUnexplode: "list=2023-08-25T07%3A34%3A59Z,2023-08-25T07%3A35%3A01Z",
-                deepObjectExplode: "list=2023-08-25T07%3A34%3A59Z&list=2023-08-25T07%3A35%3A01Z"
+                deepObjectExplode: ""
             )
         )
 
@@ -247,7 +247,7 @@ final class Test_URICodingRoundtrip: Test_Runtime {
                 simpleUnexplode: "red,green,blue",
                 formDataExplode: "list=red&list=green&list=blue",
                 formDataUnexplode: "list=red,green,blue",
-                deepObjectExplode: "list=red&list=green&list=blue"
+                deepObjectExplode: ""
             )
         )
 
@@ -278,7 +278,7 @@ final class Test_URICodingRoundtrip: Test_Runtime {
                 simpleUnexplode: "2023-01-18T10%3A04%3A11Z",
                 formDataExplode: "root=2023-01-18T10%3A04%3A11Z",
                 formDataUnexplode: "root=2023-01-18T10%3A04%3A11Z",
-                deepObjectExplode: "root=2023-01-18T10%3A04%3A11Z"
+                deepObjectExplode: ""
             )
         )
         try _test(
@@ -291,7 +291,7 @@ final class Test_URICodingRoundtrip: Test_Runtime {
                 simpleUnexplode: "green",
                 formDataExplode: "root=green",
                 formDataUnexplode: "root=green",
-                deepObjectExplode: "root=green"
+                deepObjectExplode: ""
             )
         )
         try _test(
@@ -403,6 +403,8 @@ final class Test_URICodingRoundtrip: Test_Runtime {
             let encoder = URIEncoder(configuration: configuration)
             let encodedString = try encoder.encode(value, forKey: key)
             XCTAssertEqual(encodedString, variant.string, "Variant: \(name)", file: file, line: line)
+            // Skip deepObjectExplode when the behavior is undefined since the original data is lost when encoding
+            if name == "deepObjectExplode", variant.string == "" && variant.customValue == nil { return }
             let decoder = URIDecoder(configuration: configuration)
             let decodedValue = try decoder.decode(T.self, forKey: key, from: encodedString[...])
             XCTAssertEqual(decodedValue, variant.customValue ?? value, "Variant: \(name)", file: file, line: line)
