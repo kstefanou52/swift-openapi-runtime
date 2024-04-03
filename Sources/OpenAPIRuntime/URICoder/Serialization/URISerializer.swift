@@ -184,8 +184,7 @@ extension URISerializer {
             keyAndValueSeparator = nil
             pairSeparator = ","
         case (.deepObject, _):
-            keyAndValueSeparator = "="
-            pairSeparator = "&"
+            preconditionFailure("serializeArray should not be called for deepObject style")
         }
         func serializeNext(_ element: URIEncodedNode.Primitive) throws {
             if let keyAndValueSeparator {
