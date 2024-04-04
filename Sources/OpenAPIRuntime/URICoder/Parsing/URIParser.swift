@@ -43,6 +43,9 @@ private enum ParsingError: Swift.Error {
 
     /// A malformed key-value pair was detected.
     case malformedKeyValuePair(Raw)
+    
+    /// An invalid configuration was detected.
+    case invalidConfiguration(String)
 }
 
 // MARK: - Parser implementations
@@ -61,6 +64,7 @@ extension URIParser {
             switch configuration.style {
             case .form: return [:]
             case .simple: return ["": [""]]
+            case .deepObject: return [:]
             }
         }
         switch (configuration.style, configuration.explode) {
@@ -68,6 +72,10 @@ extension URIParser {
         case (.form, false): return try parseUnexplodedFormRoot()
         case (.simple, true): return try parseExplodedSimpleRoot()
         case (.simple, false): return try parseUnexplodedSimpleRoot()
+        case (.deepObject, true): return try parseExplodedDeepObjectRoot()
+        case (.deepObject, false):
+            let reason = "Deep object style is only valid with explode set to true"
+            throw ParsingError.invalidConfiguration(reason)
         }
     }
 
@@ -205,6 +213,45 @@ extension URIParser {
             }
         }
     }
+    
+    /// Parses the root node assuming the raw string uses the deepObject style
+    /// and the explode parameter is enabled.
+    /// - Returns: The parsed root node.
+    /// - Throws: An error if parsing fails.
+    private mutating func parseExplodedDeepObjectRoot() throws -> URIParsedNode {
+        try parseGenericRoot { data, appendPair in
+            let keyValueSeparator: Character = "="
+            let pairSeparator: Character = "&"
+            let nestedKeyStartingCharacter: Character = "["
+            let nestedKeyEndingCharacter: Character = "]"
+            
+            func nestedKey(from deepObjectKey: String.SubSequence) -> Raw {
+                var unescapedFirstValue = Substring(deepObjectKey.removingPercentEncoding ?? "")
+                let nestedKey = unescapedFirstValue.parseUpToCharacterOrEnd(
+                    startingCharacter: nestedKeyStartingCharacter,
+                    nestedKeyEndingCharacter
+                )
+                return nestedKey
+            }
+            
+            while !data.isEmpty {
+                let (firstResult, firstValue) = data.parseUpToEitherCharacterOrEnd(
+                    first: keyValueSeparator,
+                    second: pairSeparator
+                )
+                
+                guard case .foundFirst = firstResult else {
+                    throw ParsingError.malformedKeyValuePair(firstValue)
+                }
+                // Hit the key/value separator, so a value will follow.
+                let secondValue = data.parseUpToCharacterOrEnd(pairSeparator)
+                let key = nestedKey(from: firstValue)
+                let value = secondValue
+                
+                appendPair(key, [value])
+            }
+        }
+    }
 }
 
 // MARK: - URIParser utilities
@@ -302,17 +349,28 @@ extension String.SubSequence {
         return finalize(.foundSecondOrEnd)
     }
 
+    
     /// Accumulates characters until the provided character is found,
     /// or the end is reached. Moves the underlying startIndex.
-    /// - Parameter character: A character to stop at.
+    /// - Parameters:
+    ///   - startingCharacter: A character to start with.
+    ///   - endingCharacter: A character to stop at.
+    ///   If not provided or not found then uses the current start index as a starting character.
     /// - Returns: The accumulated substring.
-    fileprivate mutating func parseUpToCharacterOrEnd(_ character: Character) -> Self {
-        let startIndex = startIndex
+    fileprivate mutating func parseUpToCharacterOrEnd(startingCharacter: Character? = nil, _ endingCharacter: Character) -> Self {
         guard startIndex != endIndex else { return .init() }
-        var currentIndex = startIndex
-
+        
+        let startingCharacterIndex: Substring.Index = {
+            guard let startingCharacter,
+                  let index = firstIndex(of: startingCharacter) else {
+                return startIndex
+            }
+            return 
+        }()
+        var currentIndex = startingCharacterIndex
+        
         func finalize() -> Self {
-            let parsed = self[startIndex..<currentIndex]
+            let parsed = self[startingCharacterIndex..<currentIndex]
             guard currentIndex == endIndex else {
                 self = self[index(after: currentIndex)...]
                 return parsed
@@ -322,7 +380,34 @@ extension String.SubSequence {
         }
         while currentIndex != endIndex {
             let currentChar = self[currentIndex]
-            if currentChar == character { return finalize() } else { formIndex(after: &currentIndex) }
+            if currentChar == endingCharacter { return finalize() } else { formIndex(after: &currentIndex) }
+        }
+        return finalize()
+    }
+    
+    
+    /// Accumulates characters from the `startingCharacter` character provided,
+    /// until the `endingCharacter` is reached. Moves the underlying startIndex.
+    /// - Parameters:
+    ///   - startingCharacter: A character to start with.
+    ///   - endingCharacter: A character to stop at.
+    /// - Returns: The accumulated substring.
+    fileprivate mutating func parseBetweenCharacters(startingCharacter: Character, endingCharacter: Character) -> Self {
+        guard let startingCharacterIndex = firstIndex(of: startingCharacter) else { return self }
+        var currentIndex = startingCharacterIndex
+        
+        func finalize() -> Self {
+            let parsed = self[index(after: startingCharacterIndex)..<currentIndex]
+            guard currentIndex == endIndex else {
+                self = self[index(after: currentIndex)...]
+                return parsed
+            }
+            self = .init()
+            return parsed
+        }
+        while currentIndex != endIndex {
+            let currentChar = self[currentIndex]
+            if currentChar == endingCharacter { return finalize() } else { formIndex(after: &currentIndex) }
         }
         return finalize()
     }
