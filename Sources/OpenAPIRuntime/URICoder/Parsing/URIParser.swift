@@ -43,6 +43,9 @@ private enum ParsingError: Swift.Error {
 
     /// A malformed key-value pair was detected.
     case malformedKeyValuePair(Raw)
+
+    /// An invalid configuration was detected.
+    case invalidConfiguration(String)
 }
 
 // MARK: - Parser implementations
@@ -69,7 +72,10 @@ extension URIParser {
         case (.form, false): return try parseUnexplodedFormRoot()
         case (.simple, true): return try parseExplodedSimpleRoot()
         case (.simple, false): return try parseUnexplodedSimpleRoot()
-        case (.deepObject, _): return try parseExplodedDeepObjectRoot()
+        case (.deepObject, true): return try parseExplodedDeepObjectRoot()
+        case (.deepObject, false):
+            let reason = "Deep object style is only valid with explode set to true"
+            throw ParsingError.invalidConfiguration(reason)
         }
     }
 
@@ -232,20 +238,15 @@ extension URIParser {
                     first: keyValueSeparator,
                     second: pairSeparator
                 )
-                let key: Raw
-                let value: Raw
-                switch firstResult {
-                case .foundFirst:
-                    // Hit the key/value separator, so a value will follow.
-                    let secondValue = data.parseUpToCharacterOrEnd(pairSeparator)
-                    
-                    key = nestedKey(from: firstValue)
-                    value = secondValue
-                case .foundSecondOrEnd:
-                    // No key/value separator, treat the string as the key.
-                    key = nestedKey(from: firstValue)
-                    value = .init()
+
+                guard case .foundFirst = firstResult else {
+                    throw ParsingError.malformedKeyValuePair(firstValue)
                 }
+                // Hit the key/value separator, so a value will follow.
+                let secondValue = data.parseUpToCharacterOrEnd(pairSeparator)
+                let key = nestedKey(from: firstValue)
+                let value = secondValue
+
                 appendPair(key, [value])
             }
         }

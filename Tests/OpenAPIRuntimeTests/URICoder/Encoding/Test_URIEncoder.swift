@@ -29,6 +29,6 @@ final class Test_URIEncoder: Test_Runtime {
         let serializer = URISerializer(configuration: .deepObjectExplode)
         let encoder = URIEncoder(serializer: serializer)
         let encodedString = try encoder.encode(Foo(bar: "hello world"), forKey: "root")
-        XCTAssertEqual(encodedString, "root%5Bbar%5D=hello+world")
+        XCTAssertEqual(encodedString, "root%5Bbar%5D=hello%20world")
     }
 }

@@ -17,7 +17,7 @@ import XCTest
 final class Test_URIParser: Test_Runtime {
 
     let testedVariants: [URICoderConfiguration] = [
-      .formExplode, .formUnexplode, .simpleExplode, .simpleUnexplode, .formDataExplode, .formDataUnexplode, .deepObjectExplode
+        .formExplode, .formUnexplode, .simpleExplode, .simpleUnexplode, .formDataExplode, .formDataUnexplode, .deepObjectExplode
     ]
 
     func testParsing() throws {

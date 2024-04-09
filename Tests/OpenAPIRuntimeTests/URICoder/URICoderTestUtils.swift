@@ -63,7 +63,7 @@ extension URICoderConfiguration {
     static let deepObjectExplode: Self = .init(
         style: .deepObject,
         explode: true,
-        spaceEscapingCharacter: .plus,
+        spaceEscapingCharacter: .percentEncoded,
         dateTranscoder: defaultDateTranscoder
     )
 }

@@ -29,7 +29,7 @@
     
     /// The deepObject style.
     ///
-    /// Details: Should update datatracker
+    /// Details: https://spec.openapis.org/oas/v3.1.0.html#style-values
     case deepObject
 }
 

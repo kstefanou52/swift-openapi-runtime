@@ -69,6 +69,9 @@ extension URISerializer {
 
         /// Nested containers are not supported.
         case nestedContainersNotSupported
+
+        /// An invalid configuration was detected.
+        case invalidConfiguration(String)
     }
 
     /// Computes an escaped version of the provided string.
@@ -233,9 +236,12 @@ extension URISerializer {
         case (.simple, false):
             keyAndValueSeparator = ","
             pairSeparator = ","
-        case (.deepObject, _):
+        case (.deepObject, true):
             keyAndValueSeparator = "="
             pairSeparator = "&"
+        case (.deepObject, false):
+            let reason = "Deep object style is only valid with explode set to true"
+            throw SerializationError.invalidConfiguration(reason)
         }
 
         func serializeNestedKey(_ elementKey: String, forKey rootKey: String) -> String {
