@@ -348,28 +348,17 @@ extension String.SubSequence {
         return finalize(.foundSecondOrEnd)
     }
 
-    
     /// Accumulates characters until the provided character is found,
     /// or the end is reached. Moves the underlying startIndex.
-    /// - Parameters:
-    ///   - startingCharacter: A character to start with.
-    ///   - endingCharacter: A character to stop at.
-    ///   If not provided or not found then uses the current start index as a starting character.
+    /// - Parameter character: A character to stop at.
     /// - Returns: The accumulated substring.
-    fileprivate mutating func parseUpToCharacterOrEnd(startingCharacter: Character? = nil, _ endingCharacter: Character) -> Self {
+    fileprivate mutating func parseUpToCharacterOrEnd(_ character: Character) -> Self {
+        let startIndex = startIndex
         guard startIndex != endIndex else { return .init() }
-        
-        let startingCharacterIndex: Substring.Index = {
-            guard let startingCharacter,
-                  let index = firstIndex(of: startingCharacter) else {
-                return startIndex
-            }
-            return 
-        }()
-        var currentIndex = startingCharacterIndex
-        
+        var currentIndex = startIndex
+
         func finalize() -> Self {
-            let parsed = self[startingCharacterIndex..<currentIndex]
+            let parsed = self[startIndex..<currentIndex]
             guard currentIndex == endIndex else {
                 self = self[index(after: currentIndex)...]
                 return parsed
@@ -379,34 +368,7 @@ extension String.SubSequence {
         }
         while currentIndex != endIndex {
             let currentChar = self[currentIndex]
-            if currentChar == endingCharacter { return finalize() } else { formIndex(after: &currentIndex) }
-        }
-        return finalize()
-    }
-    
-    
-    /// Accumulates characters from the `startingCharacter` character provided,
-    /// until the `endingCharacter` is reached. Moves the underlying startIndex.
-    /// - Parameters:
-    ///   - startingCharacter: A character to start with.
-    ///   - endingCharacter: A character to stop at.
-    /// - Returns: The accumulated substring.
-    fileprivate mutating func parseBetweenCharacters(startingCharacter: Character, endingCharacter: Character) -> Self {
-        guard let startingCharacterIndex = firstIndex(of: startingCharacter) else { return self }
-        var currentIndex = startingCharacterIndex
-        
-        func finalize() -> Self {
-            let parsed = self[index(after: startingCharacterIndex)..<currentIndex]
-            guard currentIndex == endIndex else {
-                self = self[index(after: currentIndex)...]
-                return parsed
-            }
-            self = .init()
-            return parsed
-        }
-        while currentIndex != endIndex {
-            let currentChar = self[currentIndex]
-            if currentChar == endingCharacter { return finalize() } else { formIndex(after: &currentIndex) }
+            if currentChar == character { return finalize() } else { formIndex(after: &currentIndex) }
         }
         return finalize()
     }
